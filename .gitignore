@@ -1,0 +1,10 @@
+# Binaire compilé du provider
+terraform-provider-denvr
+*.exe
+
+# État et cache Terraform (essais locaux)
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+crash.log
