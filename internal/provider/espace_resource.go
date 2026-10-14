@@ -73,7 +73,7 @@ func (r *espaceResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Un espace sur le socle mutualisé DENV-R (Nantes) : un réseau privé à vous (VLAN, deux passerelles, une adresse publique) " +
 			"et, selon la taille, un cluster Kubernetes de trois nœuds. La console demande la création au socle et la suit ; la ressource est " +
-			"« appliquée » quand l'espace est PRÊT (dix minutes au plus pour un cluster). La facturation commence ce jour-là.\n\n" +
+			"« appliquée » quand l'espace est PRÊT (dix minutes au plus pour un cluster). La facturation commence le mois suivant (le mois entamé n'est pas facturé).\n\n" +
 			"`terraform destroy` ne détruit rien lui-même : il DEMANDE la fermeture (ticket à l'équipe DENV-R, qui détruit sur le socle ; " +
 			"la facturation s'arrête quand c'est fait). La console ne détient aucun pouvoir de suppression sur le socle, c'est voulu.",
 		Attributes: map[string]schema.Attribute{

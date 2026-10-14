@@ -1,5 +1,5 @@
 # Une machine virtuelle nue dans le réseau privé de l'espace : Debian 12, 2 vCPU, 2 Go, 20 Go,
-# votre clé SSH. Facturée au prix de Paramètres (3 €/vCPU, 1 €/Go, 0,05 €/Go) à partir d'aujourd'hui.
+# votre clé SSH. Facturée au prix de Paramètres (3 €/vCPU, 1 €/Go, 0,05 €/Go) à partir du mois suivant.
 resource "denvr_machine" "bastion" {
   espace_id  = denvr_espace.prod.id
   modele     = "debian12" # debian12, ubuntu2404, alpine324
