@@ -90,6 +90,10 @@ func (p *denvrProvider) Resources(_ context.Context) []func() resource.Resource 
 		NewCredentialResource,
 		NewCloudResource,
 		NewPolicyResource,
+		// Le socle mutualisé DENV-R (14/10/2026) : espace, machines nues, ports publiés.
+		NewEspaceResource,
+		NewMachineResource,
+		NewRedirectionsResource,
 	}
 }
 

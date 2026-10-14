@@ -4,14 +4,13 @@ Provider Terraform de DENV-R : décrivez votre stockage souverain en **Infrastru
 as Code**. Il traduit des ressources HCL en appels sur l'API REST DENV-R — la même
 API que la console et la CLI. Vous déclarez l'état voulu, Terraform réconcilie.
 
-> **État : v0.1, prêt à publier.** Quatre ressources — `denvr_bucket`,
-> `denvr_credential`, `denvr_cloud`, `denvr_policy` — en CRUD complet, cohérentes avec
-> l'API en production. `go build`, `go vet`, `gofmt`, `go test` : **OK**
-> (terraform-plugin-framework v1.19). Documentation Registry générée (`docs/`),
-> chaîne de release en place (`.goreleaser.yml` + workflow GitHub), squelette de tests
-> d'acceptance (`make testacc`, requiert un compte de test). Reste l'acte de
-> publication (voir « Publication » plus bas). Toujours lancer un `terraform plan` sur
-> un compte de test avant la production.
+> **État : v0.2.** Sept ressources, cohérentes avec l'API en production : le stockage
+> (`denvr_bucket`, `denvr_credential`, `denvr_cloud`, `denvr_policy`) et, depuis la v0.2,
+> le **socle de calcul mutualisé DENV-R** (`denvr_espace`, `denvr_machine`,
+> `denvr_redirections`). `go build`, `go vet`, `gofmt` : OK (terraform-plugin-framework v1.19).
+> Publié sur registry.terraform.io/providers/DENV-R/denvr et sur le registre DENV-R
+> (console.denv-r.com/denvr/denvr). Toujours lancer un `terraform plan` sur un compte de
+> test avant la production.
 
 ## Ressources
 
@@ -21,6 +20,44 @@ API que la console et la CLI. Vous déclarez l'état voulu, Terraform réconcili
 | `denvr_credential` | Clé d'accès (ROOT ou restreinte) | `POST/GET/PATCH/DELETE /credentials` |
 | `denvr_cloud` | Connexion à un S3 externe (provider ou on-premise) | `POST/GET/PATCH/DELETE /clouds` |
 | `denvr_policy` | Politique du control plane (rétention/souveraineté/immuabilité) | `PUT/GET /policies` |
+| `denvr_espace` | Un espace sur le socle DENV-R : réseau privé + cluster Kubernetes (S/M/L) ou réseau seul (VPC). Prêt en ~10 min ; `destroy` = demande de fermeture à l'équipe | `POST/GET/DELETE /espaces` |
+| `denvr_machine` | Une machine virtuelle nue dans le réseau privé de l'espace (Debian, Ubuntu, Alpine ; clé SSH ; taille). `destroy` ne détruit pas sur le socle | `POST /espaces/{id}/machines` |
+| `denvr_redirections` | La liste COMPLÈTE des ports publiés depuis l'adresse publique vers les machines (déclaratif, appliqué sur les deux passerelles) | `PUT /espaces/{id}/redirections` |
+
+### Le socle DENV-R en trois ressources
+
+```hcl
+resource "denvr_espace" "prod" {
+  code   = "acme"
+  taille = "S"            # S, M, L (cluster 3 nœuds) ou VPC (réseau privé seul)
+}
+
+resource "denvr_machine" "bastion" {
+  espace_id  = denvr_espace.prod.id
+  modele     = "debian12"
+  hostname   = "bastion"
+  coeurs     = 2
+  memoire_mo = 2048
+  disque_go  = 20
+  cles_ssh   = file("~/.ssh/id_ed25519.pub")
+}
+
+resource "denvr_redirections" "prod" {
+  espace_id = denvr_espace.prod.id
+  redirection {
+    proto       = "tcp"
+    public_port = 8443
+    target_ip   = split("/", denvr_machine.bastion.ip_privee)[0]
+    target_port = 443
+  }
+}
+```
+
+Ce que le provider dit franchement : la console **demande** l'espace au socle et le suit
+(la ressource est appliquée quand il est prêt, facturé ce jour-là) ; elle **ne détruit
+rien** sur le socle (`destroy` d'un espace = ticket à l'équipe, `destroy` d'une machine =
+retrait de l'état seulement) ; les ports publiés sont une **liste complète** (jamais 22 ;
+80/443/6443 réservés au cluster). Détail dans `docs/resources/`.
 
 ### `denvr_bucket`
 
