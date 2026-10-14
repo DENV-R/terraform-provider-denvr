@@ -54,7 +54,7 @@ resource "denvr_redirections" "prod" {
 ```
 
 Ce que le provider dit franchement : la console **demande** l'espace au socle et le suit
-(la ressource est appliquée quand il est prêt, facturé à partir du mois suivant) ; elle **ne détruit
+(la ressource est appliquée quand il est prêt, facturé à l'heure, sur la facture du mois suivant) ; elle **ne détruit
 rien** sur le socle (`destroy` d'un espace = ticket à l'équipe, `destroy` d'une machine =
 retrait de l'état seulement) ; les ports publiés sont une **liste complète** (jamais 22 ;
 80/443/6443 réservés au cluster). Détail dans `docs/resources/`.

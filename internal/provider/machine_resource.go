@@ -69,7 +69,7 @@ func (r *machineResource) Metadata(_ context.Context, req resource.MetadataReque
 func (r *machineResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		MarkdownDescription: "Une machine virtuelle nue dans le réseau privé d'un `denvr_espace` : la console clone un modèle cloud-init sur le socle, " +
-			"lui donne une adresse privée, votre clé SSH et la taille choisie, puis la démarre. Facturée au prix de Paramètres à partir du mois suivant sa création (le mois entamé n'est pas facturé) " +
+			"lui donne une adresse privée, votre clé SSH et la taille choisie, puis la démarre. Facturée à l'heure au prix de Paramètres, sur la facture du mois suivant " +
 			"(3 €/vCPU, 1 €/Go de mémoire, 0,05 €/Go de disque par mois, tels que lus sur la console).\n\n" +
 			"Depuis Internet, seuls les ports publiés via `denvr_redirections` entrent ; le port 22 n'entre jamais (SSH depuis le réseau privé).\n\n" +
 			"Toute modification de taille ou de système recrée la machine. `terraform destroy` retire la machine de l'état mais NE la détruit PAS sur le socle : " +

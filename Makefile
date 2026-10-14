@@ -1,5 +1,5 @@
 BINARY = terraform-provider-denvr
-VERSION ?= 0.2.1
+VERSION ?= 0.2.2
 
 # Compile le provider.
 build:
