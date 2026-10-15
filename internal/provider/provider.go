@@ -35,7 +35,7 @@ func (p *denvrProvider) Metadata(_ context.Context, _ provider.MetadataRequest, 
 
 func (p *denvrProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		MarkdownDescription: "Provider DENV-R : pilotez votre stockage souverain en Infrastructure as Code.",
+		MarkdownDescription: "Provider DENV-R : décrivez en code votre stockage souverain et votre socle de calcul (espaces, clés, clouds connectés, règles, réseau privé, cluster Kubernetes, machines, ports).",
 		Attributes: map[string]schema.Attribute{
 			"url": schema.StringAttribute{
 				Optional:            true,

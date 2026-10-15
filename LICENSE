@@ -1,0 +1,28 @@
+Licence DENV-R — provider Terraform « denvr »
+
+Copyright (c) 2026 DENV-R SAS. Tous droits réservés.
+
+Ce logiciel (le provider Terraform « denvr ») est fourni pour décrire et piloter les
+services DENV-R au travers de l'API REST officielle.
+
+1. Concession. DENV-R SAS vous accorde un droit personnel, non exclusif et non
+   transférable de télécharger, lire, auditer, compiler et utiliser ce logiciel dans le
+   seul but d'interagir avec les services DENV-R auxquels vous avez légitimement souscrit.
+
+2. Restrictions. Vous ne pouvez pas revendre, sous-licencier, ni présenter ce logiciel
+   comme le vôtre, ni le modifier pour l'utiliser avec un autre service que DENV-R.
+   Toute utilisation contraire aux conditions générales de DENV-R ou à la réglementation
+   applicable est interdite.
+
+3. Contributions. Toute contribution proposée (issue, correctif) est réputée accordée à
+   DENV-R SAS sous les termes de la présente licence.
+
+4. Composants tiers. Ce logiciel s'appuie sur des bibliothèques publiées par leurs auteurs
+   sous leurs propres licences (notamment terraform-plugin-framework, Mozilla Public
+   License 2.0), qui restent applicables à ces composants.
+
+5. Absence de garantie. Le logiciel est fourni « EN L'ÉTAT », sans garantie d'aucune
+   sorte, expresse ou implicite. DENV-R SAS ne saurait être tenue responsable d'un
+   quelconque dommage résultant de son utilisation.
+
+6. Contact. support@denv-r.com — DENV-R SAS, Nantes, France.

@@ -1,35 +1,93 @@
-# terraform-provider-denvr
+# Provider Terraform DENV-R
 
-Provider Terraform de DENV-R : décrivez votre stockage souverain en **Infrastructure
-as Code**. Il traduit des ressources HCL en appels sur l'API REST DENV-R — la même
-API que la console et la CLI. Vous déclarez l'état voulu, Terraform réconcilie.
+[![Version](https://img.shields.io/github/v/release/DENV-R/terraform-provider-denvr?label=version&color=0e7490)](https://github.com/DENV-R/terraform-provider-denvr/releases)
+[![Registre HashiCorp](https://img.shields.io/badge/registry.terraform.io-denv--r%2Fdenvr-5c4ee5)](https://registry.terraform.io/providers/DENV-R/denvr)
+[![Registre DENV-R](https://img.shields.io/badge/console.denv--r.com-denvr%2Fdenvr-0e7490)](https://console.denv-r.com/terraform/v1/providers/denvr/denvr/versions)
 
-> **État : v0.2.** Sept ressources, cohérentes avec l'API en production : le stockage
-> (`denvr_bucket`, `denvr_credential`, `denvr_cloud`, `denvr_policy`) et, depuis la v0.2,
-> le **socle de calcul mutualisé DENV-R** (`denvr_espace`, `denvr_machine`,
-> `denvr_redirections`). `go build`, `go vet`, `gofmt` : OK (terraform-plugin-framework v1.19).
-> Publié sur registry.terraform.io/providers/DENV-R/denvr et sur le registre DENV-R
-> (console.denv-r.com/denvr/denvr). Toujours lancer un `terraform plan` sur un compte de
-> test avant la production.
+Décrivez votre système d'information chez DENV-R en code : espaces de stockage, clés d'accès,
+clouds connectés, règles, et le socle de calcul (réseau privé, cluster Kubernetes, machines,
+ports publiés). Le provider parle à la même API REST que la console et la CLI `denv-r` :
+ce que vous déclarez ici est exactement ce que la console affiche.
+
+> *English — Terraform provider for DENV-R, a sovereign cloud hosted in France. Resources for
+> S3 storage, access keys, connected clouds, policies and the shared compute base (private
+> network, Kubernetes cluster, bare VMs, published ports). Documentation is in French.*
+
+## Installation
+
+Deux adresses, le même binaire signé :
+
+```hcl
+terraform {
+  required_providers {
+    denvr = {
+      source  = "denv-r/denvr"                    # registre HashiCorp
+      # source = "console.denv-r.com/denvr/denvr" # ou notre propre registre
+      version = ">= 0.2.2"
+    }
+  }
+}
+
+provider "denvr" {
+  url = "https://console.denv-r.com"
+  # Le jeton vient de la variable d'environnement DENVR_TOKEN (Profil → API, portée lecture-écriture).
+}
+```
+
+## Premier fichier
+
+```hcl
+resource "denvr_bucket" "archives" {
+  nom        = "archives-2026"
+  offre      = "standard"
+  taille_to  = 20
+  versioning = true
+}
+
+resource "denvr_credential" "sauvegarde" {
+  nom     = "cle-sauvegarde"
+  type    = "restreinte"
+  buckets = [denvr_bucket.archives.id]
+}
+
+output "access_key" { value = denvr_credential.sauvegarde.access_key }
+```
+
+`terraform apply` crée l'espace et sa clé ; `terraform plan` vous dit ensuite ce qui a dérivé.
+
+## Votre SI existant, déjà en code
+
+Pas besoin de réécrire ce qui existe. La console génère le fichier Terraform de **tout ce que
+votre compte possède**, avec les secrets en variables, et le script d'import correspondant :
+
+- dans la console : *Vos règles → Emporter en Terraform* ;
+- en ligne de commande : `denv-r export terraform --imports` ;
+- par l'API : `GET /api/v1/architecture/terraform/`.
+
+Le fichier produit passe `terraform validate` et `terraform fmt -check` tel quel.
 
 ## Ressources
 
-| Ressource | Rôle | Endpoints API |
-|---|---|---|
-| `denvr_bucket` | Espace de stockage S3 | `POST/GET/PATCH/DELETE /buckets` |
-| `denvr_credential` | Clé d'accès (ROOT ou restreinte) | `POST/GET/PATCH/DELETE /credentials` |
-| `denvr_cloud` | Connexion à un S3 externe (provider ou on-premise) | `POST/GET/PATCH/DELETE /clouds` |
-| `denvr_policy` | Politique du control plane (rétention/souveraineté/immuabilité) | `PUT/GET /policies` |
-| `denvr_espace` | Un espace sur le socle DENV-R : réseau privé + cluster Kubernetes (S/M/L) ou réseau seul (VPC). Prêt en ~10 min ; `destroy` = demande de fermeture à l'équipe | `POST/GET/DELETE /espaces` |
-| `denvr_machine` | Une machine virtuelle nue dans le réseau privé de l'espace (Debian, Ubuntu, Alpine ; clé SSH ; taille). `destroy` ne détruit pas sur le socle | `POST /espaces/{id}/machines` |
-| `denvr_redirections` | La liste COMPLÈTE des ports publiés depuis l'adresse publique vers les machines (déclaratif, appliqué sur les deux passerelles) | `PUT /espaces/{id}/redirections` |
+| Ressource | Ce qu'elle décrit |
+|---|---|
+| `denvr_bucket` | Un espace de stockage S3 : offre, taille, versions, verrouillage WORM, mode « géré par l'application » |
+| `denvr_credential` | Une clé d'accès, totale ou restreinte à des espaces |
+| `denvr_cloud` | Un stockage S3 externe connecté (hébergeur ou sur site), pour migrer ou synchroniser |
+| `denvr_policy` | Une règle du plan de contrôle : rétention, souveraineté, immuabilité |
+| `denvr_espace` | Un espace sur le socle DENV-R : réseau privé et, selon la taille, un cluster Kubernetes de trois nœuds |
+| `denvr_machine` | Une machine virtuelle nue (Debian, Ubuntu, Alpine) dans le réseau privé d'un espace |
+| `denvr_redirections` | La liste complète des ports publiés depuis l'adresse publique de l'espace vers ses machines |
 
-### Le socle DENV-R en trois ressources
+Chaque ressource est documentée dans [docs/resources/](docs/resources/), avec un exemple
+complet dans [examples/resources/](examples/resources/). Un exemple de bout en bout :
+[examples/main.tf](examples/main.tf).
+
+### Le socle en trois ressources
 
 ```hcl
 resource "denvr_espace" "prod" {
   code   = "acme"
-  taille = "S"            # S, M, L (cluster 3 nœuds) ou VPC (réseau privé seul)
+  taille = "S" # S, M, L : cluster de 3 nœuds ; VPC : réseau privé seul
 }
 
 resource "denvr_machine" "bastion" {
@@ -46,142 +104,56 @@ resource "denvr_redirections" "prod" {
   espace_id = denvr_espace.prod.id
   redirection {
     proto       = "tcp"
-    public_port = 8443
+    public_port = 2222
     target_ip   = split("/", denvr_machine.bastion.ip_privee)[0]
-    target_port = 443
+    target_port = 22
   }
 }
 ```
 
-Ce que le provider dit franchement : la console **demande** l'espace au socle et le suit
-(la ressource est appliquée quand il est prêt, facturé à l'heure, sur la facture du mois suivant) ; elle **ne détruit
-rien** sur le socle (`destroy` d'un espace = ticket à l'équipe, `destroy` d'une machine =
-retrait de l'état seulement) ; les ports publiés sont une **liste complète** (jamais 22 ;
-80/443/6443 réservés au cluster). Détail dans `docs/resources/`.
+## Ce que le provider fait, et ne fait pas
 
-### `denvr_bucket`
+- **Un espace du socle est demandé, puis suivi.** La ressource est appliquée quand l'espace est
+  prêt, une dizaine de minutes pour un cluster. Il est facturé à l'heure, de la mise à disposition
+  à la fermeture, sur la facture du mois suivant.
+- **Rien n'est détruit sur le socle par le provider.** `terraform destroy` d'un espace ouvre une
+  demande de fermeture à l'équipe DENV-R ; celui d'une machine retire la machine de l'état
+  seulement. C'est voulu : la console ne détient aucun pouvoir de suppression sur le socle.
+- **Les ports publiés forment une liste complète**, appliquée sur les deux passerelles ou refusée.
+  Jamais le port public 22 ; 80, 443 et 6443 restent au cluster quand l'espace en a un.
+- **Une politique n'est jamais supprimée**, seulement désactivée (une par type, l'API fait un upsert).
+- **Les secrets vivent dans l'état Terraform**, en clair, comme pour tout provider :
+  `denvr_credential.secret_key` et `denvr_cloud.secret_key` sont marqués sensibles, mais protégez
+  votre backend (distant, chiffré, verrouillé) et ne versionnez jamais `terraform.tfstate`.
 
-```hcl
-resource "denvr_bucket" "archives" {
-  nom       = "archives-2026"   # non modifiable après création (ForceNew)
-  offre     = "standard"        # modifiable en place
-  taille_to = 20                # modifiable en place
-  versioning = true             # modifiable en place
-  tags      = "SAUVEGARDE"      # modifiable en place
+## Jetons et rôles
 
-  # Verrouillage WORM (non modifiable après création) :
-  # object_locking_days = 3650
-  # object_lock_mode    = "COMPLIANCE"
-}
-```
-
-| Attribut | Écriture | Remarque |
-|---|---|---|
-| `nom` | création seule | ForceNew |
-| `offre`, `taille_to`, `versioning`, `tags` | création + modification | `PATCH` en place |
-| `multisite`, `object_locking_days`, `object_lock_mode` | création seule | ForceNew |
-| `id` | calculé | identifiant interne |
-
-Mapping API : `POST /api/v1/buckets/` (create) · `GET /api/v1/buckets/{id}/` (read) ·
-`PATCH /api/v1/buckets/{id}/` (update) · `DELETE /api/v1/buckets/{id}/` (delete).
-Import : `terraform import denvr_bucket.archives <id>`.
-
-### `denvr_credential`
-
-```hcl
-resource "denvr_credential" "ci" {
-  nom     = "cle-integration-continue"
-  type    = "restreinte"                    # ou "root" (accès total). ForceNew.
-  buckets = [denvr_bucket.archives.id]      # espaces autorisés (type restreinte)
-}
-```
-
-Attributs calculés : `access_key`, `secret_key` (**sensible**), `isolee`.
-Import : `terraform import denvr_credential.ci <id>`.
-
-### `denvr_cloud`
-
-```hcl
-resource "denvr_cloud" "ovh_prod" {
-  provider_type = "ovh"                      # ForceNew ; « provider » est réservé par Terraform
-  endpoint      = "s3.gra.io.cloud.ovh.net"
-  region        = "gra"
-  access_key    = var.ovh_key
-  secret_key    = var.ovh_secret             # sensible
-  verify_tls    = true                       # false pour un on-premise auto-signé
-  lecture_seule = false                      # false = autorise l'écriture/migration
-}
-```
-
-Import : `terraform import denvr_cloud.ovh_prod <id>`.
-
-### `denvr_policy`
-
-```hcl
-resource "denvr_policy" "retention" {
-  type   = "retention"                       # ou "souverainete" / "immutabilite". ForceNew.
-  actif  = true
-  params = jsonencode({ min_jours = 90 })    # souverainete : { zones = ["FR","EU"] }
-}
-```
-
-Une seule politique par `type` (l'API fait un upsert). « Supprimer » la ressource
-la **désactive** (l'API ne supprime pas un type). Import : `terraform import denvr_policy.retention retention`
-(l'identifiant est le type).
-
-## ⚠️ Secrets et état Terraform
-
-`denvr_credential.secret_key` et `denvr_cloud.secret_key` sont stockés **en clair dans
-le fichier d'état** (`terraform.tfstate`) — comportement normal de Terraform. Utilisez
-un backend distant chiffré et verrouillé (S3+DynamoDB, Terraform Cloud…) ; ne commitez
-jamais l'état. Ces attributs sont marqués `sensitive` (masqués des logs et du plan).
-
-## Configuration
-
-```hcl
-provider "denvr" {
-  url   = "https://console.denv-r.com"  # ou variable d'env DENVR_API_URL
-  token = "dvr_xxx"                     # ou variable d'env DENVR_TOKEN (recommandé)
-}
-```
-
-Le jeton doit être de portée **`read-write`** (créé depuis la console, Profil → API).
+Le jeton se crée dans la console (*Profil → API*). Lire demande une portée lecture ; appliquer
+demande la portée lecture-écriture. Engager un prix (un espace, une machine, une fermeture) exige
+le rôle propriétaire ou administrateur du compte ; publier un port est aussi ouvert au rôle
+développeur. Un refus revient toujours avec sa raison, en français.
 
 ## Développement
 
 ```bash
-make tidy     # récupère/aligne les dépendances
-make build    # compile le binaire (avec la version)
+make build    # compile le binaire
 make check    # gofmt + go vet
-make testacc  # tests d'acceptance (requiert DENVR_API_URL + DENVR_TOKEN read-write + TF_ACC)
-make docs     # régénère docs/ (requiert tfplugindocs)
-make install  # installe en local pour un essai (adapter OS_ARCH)
+make testacc  # tests d'acceptance : créent de VRAIES ressources (DENVR_API_URL, DENVR_TOKEN, TF_ACC=1)
+make docs     # régénère docs/ depuis les schémas et examples/ (tfplugindocs)
+make install  # installe en local pour un essai sans registre
 ```
 
-Essai local sans registre : `make install`, puis dans un dossier de test
-`terraform init` trouvera le provider dans `~/.terraform.d/plugins/...`.
+Construit avec [terraform-plugin-framework](https://github.com/hashicorp/terraform-plugin-framework).
+Les versions sont publiées par un tag `vX.Y.Z` : GoReleaser compile pour chaque système, signe les
+sommes de contrôle avec la clé GPG DENV-R et crée la release, que les deux registres ingèrent.
+Le détail est dans [RELEASING.md](RELEASING.md), l'historique dans [CHANGELOG.md](CHANGELOG.md).
 
-## Publication au Terraform Registry
+## Support
 
-Le Registry public **ne publie que depuis GitHub** : ce dossier doit vivre dans un dépôt
-GitHub dédié `terraform-provider-denvr` (miroir du code, aujourd'hui sur GitLab).
+- Console : [console.denv-r.com](https://console.denv-r.com), documentation de l'API dans *Documentation*.
+- Ligne de commande : `pip install denv-r-cli`, commande `denv-r`.
+- Une question, un bug : support@denv-r.com ou une *issue* ici.
 
-1. **Clé GPG de signature** (une fois) : générer une clé, publier la clé publique, et la
-   déclarer dans le compte du Registry (Settings → Signing keys).
-2. **Secrets GitHub** du dépôt : `GPG_PRIVATE_KEY` (clé privée ASCII-armored) et
-   `PASSPHRASE`.
-3. **Revendiquer le namespace** sur registry.terraform.io (« Publish → Provider »,
-   organisation `denv-r`).
-4. **Publier une version** : `git tag v0.1.0 && git push origin v0.1.0`. Le workflow
-   `.github/workflows/release.yml` lance GoReleaser (build multi-plateforme +
-   `SHA256SUMS` signés + manifest) et crée la release GitHub ; le Registry l'ingère.
-5. **Vérifier** : la page `registry.terraform.io/providers/denv-r/denvr` apparaît, et un
-   `terraform init` depuis `examples/` télécharge le provider.
+## Licence
 
-Correctif : bump de version dans le tag (`v0.1.1`) puis re-push — le Registry est
-append-only, une version publiée ne se réécrit pas.
-
-## Feuille de route
-
-- Data sources (lecture seule) : lister espaces/clés/clouds, exposer le plan de dérive.
-- Import (`terraform import`) des ressources existantes.
+Code publié pour être lu, audité et utilisé avec les services DENV-R. Voir [LICENSE](LICENSE).
