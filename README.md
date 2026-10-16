@@ -156,4 +156,5 @@ Le détail est dans [RELEASING.md](RELEASING.md), l'historique dans [CHANGELOG.m
 
 ## Licence
 
-Code publié pour être lu, audité et utilisé avec les services DENV-R. Voir [LICENSE](LICENSE).
+[Apache License 2.0](LICENSE). Le code est libre d'être lu, audité, modifié et redistribué ; la marque DENV-R
+reste celle de DENV-R SAS.
