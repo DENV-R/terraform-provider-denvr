@@ -3,7 +3,15 @@
 # (build multi-plateforme + SHA256SUMS signes), publie la release GitHub.
 # Le Registry Terraform lit ensuite cette release.
 #
-# Secrets requis dans le depot GitHub : GPG_PRIVATE_KEY, PASSPHRASE.
+# Secrets requis : GPG_PRIVATE_KEY, PASSPHRASE, poses dans l'ENVIRONNEMENT GitHub « release »
+# (Settings > Environments > release), pas au niveau du depot.
+#
+# Audit du 28/10/2026 :
+#   - chaque action est epinglee par l'empreinte du commit (une etiquette mobile detournee chez un
+#     tiers ne peut plus recevoir la cle de signature) ; l'etiquette lisible reste en commentaire ;
+#   - le job tourne dans l'environnement « release » : c'est la que vivent les secrets et la regle
+#     de relecture obligatoire (le job attend l'approbation d'un relecteur avant de recevoir la cle).
+#     Un workflow modifie qui retirerait cette ligne ne verrait plus les secrets.
 name: release
 
 on:
@@ -17,23 +25,24 @@ permissions:
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    environment: release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version-file: 'go.mod'
           cache: true
 
       - name: Import GPG key
-        uses: crazy-max/ghaction-import-gpg@v6
+        uses: crazy-max/ghaction-import-gpg@e89d40939c28e39f97cf32126055eeae86ba74ec # v6
         id: import_gpg
         with:
           gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.PASSPHRASE }}
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@e435ccd777264be153ace6237001ef4d979d3a7a # v6
         with:
           args: release --clean
         env:
